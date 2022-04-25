@@ -24,50 +24,50 @@ class Classique(Element):
     
     def __repr__(self):
         if self.__couleur == "Rouge":
-            return "ðŸ”´"
+            return "🔴"
         elif self.__couleur == "Vert":
-            return "ðŸŸ¢"
+            return "🟢"
         elif self.__couleur == "Jaune":
-            return "ðŸŸ¡"
+            return "🟡"
         elif self.__couleur == "Violet":
-            return "ðŸŸ£"
+            return "🟣"
         else:
-            return "ðŸ”µ"
+            return "🔵"
             
 class Roquette(Element):
     def __init__(self):
         pass
     
     def __repr__(self):
-        return "ðŸš€"
+        return "🚀"
 
 class Bombe(Element):
     def __init__(self):
         pass
     
     def __repr__(self):
-        return "ðŸ’£"
+        return "💣"
     
 class Avion(Element):
     def __init__(self):
         pass
     
     def __repr__(self):
-        return "âœˆï¸"
+        return "✈️"
 
 class Deflagrateur(Element):
     def __init__(self):
         pass
     
     def __repr__(self):
-        return "ðŸ”«"
+        return "🔫"
 
 class Etoile(Element):
     def __init__(self):
         pass
     
     def __repr__(self):
-        return "â­"
+        return "⭐"
 
 class Grille():
     def __init__(self, taille, proba_r, proba_b, proba_a, proba_d, proba_e):
@@ -105,4 +105,4 @@ def retourner_random(proba_r, proba_b, proba_a, proba_d, proba_e):
             return rand
     
     else:
-        raise ValueError("Les probabilitÃ©s d'apparitions des bonus ne sont pas valides")
+        raise ValueError("Les probabilités d'apparitions des bonus ne sont pas valides")
