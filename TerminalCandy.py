@@ -132,6 +132,19 @@ class Grille():
                     L_pattern.append(Pattern(3, (i,j)))
 
         # TYPE 4 - T
+
+        # TYPE 5 - T+90°
+        for i in range(1,n-1):
+            for j in range(0,n-2):
+                L = [M[i-1,j], M[i,j], M[i+1,j], M[i,j+1], M[i,j+2]]
+                c = True
+                for e in L:
+                    if repr(e) != repr(L[1]):
+                        c = False
+                if c:
+                    L_pattern.append(Pattern(5, (i,j)))
+
+        # TYPE 6 - T+180°
         for i in range(2,n):
             for j in range(1,n-1):
                 L = [M[i,j-1], M[i,j], M[i,j+1], M[i-2,j], M[i-1,j]]
@@ -140,9 +153,9 @@ class Grille():
                     if repr(e) != repr(L[1]):
                         c = False
                 if c:
-                    L_pattern.append(Pattern(3, (i,j)))
+                    L_pattern.append(Pattern(6, (i,j)))
 
-        # TYPE N ...
+        return L_pattern
 
                 
 class Pattern():
