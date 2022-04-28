@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Thu Apr 21 18:44:00 2022
-@author: bouti
+@author: hiap's
 """
 import numpy as np
 import random as rd
@@ -98,111 +98,186 @@ class Grille():
         M = self.__data
         n = np.shape(self.__data)[0]
         L_pattern = []
-        
-        def enlever_pattern(pattern_type, loc_boost):
-            for i in L_pattern:
-                if repr(i) == "Pattern de type {} en {}".format(str(pattern_type), str(loc_boost)):
-                    L_pattern.remove(i)
+        cell = []
         
         # TYPE 8 - XXDXX Ligne
         for i in range(n):
             for j in range(2,n-2):
-                L = [M[i,j+k-2] for k in range(5)]
-                c = True
-                for e in L:
-                    if repr(e) != repr(L[1]):
-                        c = False
-                if c:
-                    L_pattern.append(Pattern(8, (i,j)))
+                cond = not((i,j+k-2) in cell for k in range(5))
+                if cond:
+                    L = [M[i,j+k-2] for k in range(5)]
+                    c = True
+                    for e in L:
+                        if repr(e) != repr(L[1]):
+                            c = False
+                    if c:
+                        L_pattern.append(Pattern(8, (i,j)))
+                        for k in range(5):
+                            cell.append((i,j+k-2))
         
         # TYPE 9 - XXDXX Colonne
         for i in range(2,n-2):
             for j in range(n):
-                L = [M[i+k-2,j] for k in range(5)]
-                c = True
-                for e in L:
-                    if repr(e) != repr(L[1]):
-                        c = False
-                if c:
-                    L_pattern.append(Pattern(9, (i,j)))
+                cond = not((i+k-2,j) in cell for k in range(5))
+                if cond:
+                    L = [M[i+k-2,j] for k in range(5)]
+                    c = True
+                    for e in L:
+                        if repr(e) != repr(L[1]):
+                            c = False
+                    if c:
+                        L_pattern.append(Pattern(9, (i,j)))
+                        for k in range(5):
+                            cell.append((i+k-2,j))
         
         # TYPE 4 - T
         for i in range(0,n-2):
             for j in range(1,n-1):
-                L = [M[i,j-1], M[i,j], M[i,j+1], M[i+1,j], M[i+2,j]]
-                c = True
-                for e in L:
-                    if repr(e) != repr(L[1]):
-                        c = False
-                if c:
-                    L_pattern.append(Pattern(4, (i,j)))
+                cond = not((i,j-1) in cell or (i,j) in cell or (i,j+1) in cell or (i+1,j) in cell or (i+2,j) in cell)
+                if cond:
+                    L = [M[i,j-1], M[i,j], M[i,j+1], M[i+1,j], M[i+2,j]]
+                    c = True
+                    for e in L:
+                        if repr(e) != repr(L[1]):
+                            c = False
+                    if c:
+                        L_pattern.append(Pattern(4, (i,j)))
+                        cell.append((i,j-1))
+                        cell.append((i,j))
+                        cell.append((i,j+1))
+                        cell.append((i+1,j))
+                        cell.append((i+2,j))
                     
         # TYPE 5 - T+90°
         for i in range(1,n-1):
             for j in range(0,n-2):
-                L = [M[i-1,j], M[i,j], M[i+1,j], M[i,j+1], M[i,j+2]]
-                c = True
-                for e in L:
-                    if repr(e) != repr(L[1]):
-                        c = False
-                if c:
-                    L_pattern.append(Pattern(5, (i,j)))
+                cond = not((i-1,j) in cell or (i,j) in cell or (i+1,j) in cell or (i,j+1) in cell or (i,j+2) in cell)
+                if cond:
+                    L = [M[i-1,j], M[i,j], M[i+1,j], M[i,j+1], M[i,j+2]]
+                    c = True
+                    for e in L:
+                        if repr(e) != repr(L[1]):
+                            c = False
+                    if c:
+                        L_pattern.append(Pattern(5, (i,j)))
+                        cell.append((i-1,j))
+                        cell.append((i,j))
+                        cell.append((i+1,j))
+                        cell.append((i,j+1))
+                        cell.append((i,j+2))
 
         # TYPE 6 - T+180°
         for i in range(2,n):
             for j in range(1,n-1):
-                L = [M[i,j-1], M[i,j], M[i,j+1], M[i-2,j], M[i-1,j]]
-                c = True
-                for e in L:
-                    if repr(e) != repr(L[1]):
-                        c = False
-                if c:
-                    L_pattern.append(Pattern(6, (i,j)))
+                cond = not((i,j-1) in cell or (i,j) in cell or (i,j+1) in cell or (i-1,j) in cell or (i-2,j) in cell)
+                if cond:
+                    L = [M[i,j-1], M[i,j], M[i,j+1], M[i-2,j], M[i-1,j]]
+                    c = True
+                    for e in L:
+                        if repr(e) != repr(L[1]):
+                            c = False
+                    if c:
+                        L_pattern.append(Pattern(6, (i,j)))
+                        cell.append((i,j-1))
+                        cell.append((i,j))
+                        cell.append((i,j+1))
+                        cell.append((i-1,j))
+                        cell.append((i-2,j))
         
         # TYPE 7 - T+270°
         for i in range(1,n-1):
             for j in range(2,n):
-                L = [M[i-1,j], M[i,j], M[i+1,j], M[i,j-2], M[i,j-1]]
-                c = True
-                for e in L:
-                    if repr(e) != repr(L[1]):
-                        c = False
-                if c:
-                    L_pattern.append(Pattern(7, (i,j)))
+                cond = not((i-1,j) in cell or (i,j) in cell or (i+1,j) in cell or (i,j-1) in cell or (i,j-2) in cell)
+                if cond:
+                    L = [M[i-1,j], M[i,j], M[i+1,j], M[i,j-2], M[i,j-1]]
+                    c = True
+                    for e in L:
+                        if repr(e) != repr(L[1]):
+                            c = False
+                    if c:
+                        L_pattern.append(Pattern(7, (i,j)))
+                        cell.append((i-1,j))
+                        cell.append((i,j))
+                        cell.append((i+1,j))
+                        cell.append((i,j-1))
+                        cell.append((i,j-2))
         
         # TYPE 3 - Carré 2x2
         for i in range(n-1):
             for j in range(n-1):
-                L = [M[i+k,j+l] for k in range(2) for l in range(2)]
-                c = True
-                for e in L:
-                    if repr(e) != repr(L[1]):
-                        c = False
-                if c:
-                    L_pattern.append(Pattern(3, (i,j)))
+                cond = not((i+k,j+l) in cell for k in range(2) for l in range(2))
+                if cond:
+                    L = [M[i+k,j+l] for k in range(2) for l in range(2)]
+                    c = True
+                    for e in L:
+                        if repr(e) != repr(L[1]):
+                            c = False
+                    if c:
+                        L_pattern.append(Pattern(3, (i,j)))
+                        for k in range(2):
+                            for l in range(2):
+                                cell.append((i+k,j+l))
                 
+        # TYPE 1 - XRXX Ligne
+        for i in range(n):
+            for j in range(1,n-2):
+                cond = not((i,j+k-2) in cell for k in range(4))
+                if cond:
+                    L = [M[i,j+k-2] for k in range(4)]
+                    c = True
+                    for e in L:
+                        if repr(e) != repr(L[1]):
+                            c = False
+                    if c:
+                        L_pattern.append(Pattern(1, (i,j)))
+                        for k in range(4):
+                            cell.append((i,j+k-2))
         
+        # TYPE 2 - XRXX Colonne
+        for i in range(1,n-2):
+            for j in range(n):
+                cond = not((i+k-2,j) in cell for k in range(4))
+                if cond:
+                    L = [M[i+k-2,j] for k in range(4)]
+                    c = True
+                    for e in L:
+                        if repr(e) != repr(L[1]):
+                            c = False
+                    if c:
+                        L_pattern.append(Pattern(2, (i,j)))
+                        for k in range(4):
+                            cell.append((i+k-2,j))
+                            
         # TYPE 10 - Match-3 Ligne
         for i in range(n):
             for j in range(1,n-1):
-                L = [M[i,j+k-1] for k in range(3)]
-                c = True
-                for e in L:
-                    if repr(e) != repr(L[1]):
-                        c = False
-                if c:
-                    L_pattern.append(Pattern(10, (i,j)))
+                cond = not((i,j+k-1) in cell for k in range(3))
+                if cond:
+                    L = [M[i,j+k-1] for k in range(3)]
+                    c = True
+                    for e in L:
+                        if repr(e) != repr(L[1]):
+                            c = False
+                    if c:
+                        L_pattern.append(Pattern(10, (i,j)))
+                        for k in range(3):
+                            cell.append((i,j+k-1))
+                        
         
         # TYPE 11 - Match-3 Colonne
         for i in range(1,n-1):
             for j in range(n):
-                L = [M[i+k-1,j] for k in range(3)]
-                c = True
-                for e in L:
-                    if repr(e) != repr(L[1]):
-                        c = False
-                if c:
-                    L_pattern.append(Pattern(11, (i,j)))
+                cond = not((i+k-1,j) in cell for k in range(3))
+                if cond:
+                    L = [M[i+k-1,j] for k in range(3)]
+                    c = True
+                    for e in L:
+                        if repr(e) != repr(L[1]):
+                            c = False
+                    if c:
+                        L_pattern.append(Pattern(11, (i,j)))
+                        for k in range(3):
+                            cell.append((i+k-1,j))
 
 
         return L_pattern
