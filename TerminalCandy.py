@@ -91,48 +91,52 @@ class Grille():
             self.__data[i, colonne] = self.__data[i-1, colonne]
             i += (-1)
         self.__data[0, colonne] = retourner_random(self.__proba_r, self.__proba_b, self.__proba_a, self.__proba_d, self.__proba_e)
+    
 
-    def recherche_pattern(self):
+    def patterns(self):
         ## PROBLEME ICI !!!
         M = self.__data
         n = np.shape(self.__data)[0]
         L_pattern = []
-
-        # TYPE 1 - XRXX Ligne
+        
+        def enlever_pattern(pattern_type, loc_boost):
+            for i in L_pattern:
+                if repr(i) == "Pattern de type {} en {}".format(str(pattern_type), str(loc_boost)):
+                    L_pattern.remove(i)
+        
+        # TYPE 8 - XXDXX Ligne
         for i in range(n):
-            for j in range(1,n-3):
-                L = [M[i,j+k-1] for k in range(4)]
+            for j in range(2,n-2):
+                L = [M[i,j+k-2] for k in range(5)]
                 c = True
                 for e in L:
                     if repr(e) != repr(L[1]):
                         c = False
                 if c:
-                    L_pattern.append(Pattern(1, (i,j)))
-
-        # TYPE 2 - XRXX Colonne
-        for i in range(1,n-3):
+                    L_pattern.append(Pattern(8, (i,j)))
+        
+        # TYPE 9 - XXDXX Colonne
+        for i in range(2,n-2):
             for j in range(n):
-                L = [M[i+k-1,j] for k in range(4)]
+                L = [M[i+k-2,j] for k in range(5)]
                 c = True
                 for e in L:
                     if repr(e) != repr(L[1]):
                         c = False
                 if c:
-                    L_pattern.append(Pattern(2, (i,j)))
-
-        # TYPE 3 - Carré 2x2
-        for i in range(n-1):
-            for j in range(n-1):
-                L = [M[i+k,j+l] for k in range(2) for l in range(2)]
-                c = True
-                for e in L:
-                    if repr(e) != repr(L[1]):
-                        c = False
-                if c:
-                    L_pattern.append(Pattern(3, (i,j)))
-
+                    L_pattern.append(Pattern(9, (i,j)))
+        
         # TYPE 4 - T
-
+        for i in range(0,n-2):
+            for j in range(1,n-1):
+                L = [M[i,j-1], M[i,j], M[i,j+1], M[i+1,j], M[i+2,j]]
+                c = True
+                for e in L:
+                    if repr(e) != repr(L[1]):
+                        c = False
+                if c:
+                    L_pattern.append(Pattern(4, (i,j)))
+                    
         # TYPE 5 - T+90°
         for i in range(1,n-1):
             for j in range(0,n-2):
@@ -154,21 +158,68 @@ class Grille():
                         c = False
                 if c:
                     L_pattern.append(Pattern(6, (i,j)))
+        
+        # TYPE 7 - T+270°
+        for i in range(1,n-1):
+            for j in range(2,n):
+                L = [M[i-1,j], M[i,j], M[i+1,j], M[i,j-2], M[i,j-1]]
+                c = True
+                for e in L:
+                    if repr(e) != repr(L[1]):
+                        c = False
+                if c:
+                    L_pattern.append(Pattern(7, (i,j)))
+        
+        # TYPE 3 - Carré 2x2
+        for i in range(n-1):
+            for j in range(n-1):
+                L = [M[i+k,j+l] for k in range(2) for l in range(2)]
+                c = True
+                for e in L:
+                    if repr(e) != repr(L[1]):
+                        c = False
+                if c:
+                    L_pattern.append(Pattern(3, (i,j)))
+                
+        
+        # TYPE 10 - Match-3 Ligne
+        for i in range(n):
+            for j in range(1,n-1):
+                L = [M[i,j+k-1] for k in range(3)]
+                c = True
+                for e in L:
+                    if repr(e) != repr(L[1]):
+                        c = False
+                if c:
+                    L_pattern.append(Pattern(10, (i,j)))
+        
+        # TYPE 11 - Match-3 Colonne
+        for i in range(1,n-1):
+            for j in range(n):
+                L = [M[i+k-1,j] for k in range(3)]
+                c = True
+                for e in L:
+                    if repr(e) != repr(L[1]):
+                        c = False
+                if c:
+                    L_pattern.append(Pattern(11, (i,j)))
+
 
         return L_pattern
-
                 
 class Pattern():
-    # TYPES DE PATTERNS:
-        # Type 1: XRXX Ligne
-        # Type 2: XRXX Colonne
-        # Type 3: Carré 2x2
+    # TYPES DE PATTERNS: (triés par force)
+        # Type 8: XXDXX Ligne
+        # Type 9: XXDXX Colonne
         # Type 4: T
         # Type 5: T+90°
         # Type 6: T+180°
         # Type 7: T+270°
-        # Type 8: XXDXX Ligne
-        # Type 9: XXDXX Colonne
+        # Type 3: Carré 2x2
+        # Type 1: XRXX Ligne
+        # Type 2: XRXX Colonne
+        # Type 10: Match-3 Ligne
+        # Type 11: Match-3 Colonne
         
     def __init__(self, pattern_type, loc_boost):
         self.__type = pattern_type
@@ -191,4 +242,4 @@ def retourner_random(proba_r, proba_b, proba_a, proba_d, proba_e):
     else:
         raise ValueError("Les probabilités d'apparitions des bonus ne sont pas valides")
 
-G = Grille(10, 0.05, 0.05, 0.05, 0.05, 0.05)
+G = Grille(10, 0.01, 0.01, 0.01, 0.01, 0.01)
