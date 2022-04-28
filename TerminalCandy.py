@@ -18,14 +18,24 @@ import numpy as np
 import random as rd
 
 class Element():
-    def __init__(self):
-        pass
+    def __init__(self, grille, ligne, colonne):
+        self.__grille = grille
+        self.__ligne = ligne
+        self.__colonne = colonne
     
     def __repr__(self):
         return "Element"
+    
+    def read_coordonnees(self):
+        return (self.__ligne, self.__colonne)
+    
+    def write_coordonnees(self, nv_ligne, nv_colonne):
+        self.__ligne = nv_ligne
+        self.__colonne = nv_colonne
 
 class Classique(Element):
-    def __init__(self, couleur):
+    def __init__(self, couleur, grille, ligne, colonne):
+        super().__init__(grille, ligne, colonne)
         couleurs = ["Rouge", "Vert", "Jaune", "Violet", "Bleu"]
         if couleur in couleurs:
             self.__couleur = couleur
@@ -45,63 +55,60 @@ class Classique(Element):
             return "🔵"
             
 class Roquette(Element):
-    def __init__(self):
-        pass
+    def __init__(self, grille, ligne, colonne):
+        super().__init__(grille, ligne, colonne)
     
     def __repr__(self):
         return "🚀"
 
 class Bombe(Element):
-    def __init__(self):
-        pass
+    def __init__(self, grille, ligne, colonne):
+        super().__init__(grille, ligne, colonne)
     
     def __repr__(self):
         return "💣"
     
 class Avion(Element):
-    def __init__(self):
-        pass
+    def __init__(self, grille, ligne, colonne):
+        super().__init__(grille, ligne, colonne)
     
     def __repr__(self):
         return "✈"
 
 class Deflagrateur(Element):
-    def __init__(self):
-        pass
+    def __init__(self, grille, ligne, colonne):
+        super().__init__(grille, ligne, colonne)
     
     def __repr__(self):
         return "🔫"
 
 class Etoile(Element):
-    def __init__(self):
-        pass
+    def __init__(self, grille, ligne, colonne):
+        super().__init__(grille, ligne, colonne)
     
     def __repr__(self):
         return "⭐"
 
 class Grille():
-    def __init__(self, taille, proba_r, proba_b, proba_a, proba_d, proba_e):
+    def __init__(self, taille, probas):
         self.__taille = taille
-        self.__proba_r = proba_r
-        self.__proba_b = proba_b
-        self.__proba_a = proba_a
-        self.__proba_d = proba_d
-        self.__proba_e = proba_e
+        self.__probas = probas
         self.__data = np.array([[None for i in range(self.__taille)] for i in range(self.__taille)])
         
         for i in range(self.__taille):
                 for j in range(self.__taille):
-                    self.__data[i,j] = retourner_random(proba_r, proba_b, proba_a, proba_d, proba_e)
+                    self.__data[i,j] = retourner_random(self.__probas, self, i, j)
                     
     def data(self):
         return self.__data
     
-    def detruire(self, colonne, ligne):
+    def detruire(self, ligne, colonne):
         i = ligne
         while i>=1:
             self.__data[i, colonne] = self.__data[i-1, colonne]
+            self.__data[i, colonne].write_coordonnees(i, colonne)
             i += (-1)
-        self.__data[0, colonne] = retourner_random(self.__proba_r, self.__proba_b, self.__proba_a, self.__proba_d, self.__proba_e)
+        self.__data[0, colonne] = retourner_random(self.__probas, self, 0, colonne)
     
 
     def patterns(self):
@@ -326,19 +333,54 @@ class Pattern():
 
     def __repr__(self):
         return "Pattern de type {} en {}".format(str(self.__type), str(self.__loc_boost))
+    
+    def activer(self):
+        if self.__type == 1:
+            pass
+        
+        if self.__type == 2:
+            pass
+        
+        if self.__type == 3:
+            pass
+        
+        if self.__type == 4:
+            pass
+        
+        if self.__type == 5:
+            pass
+        
+        if self.__type == 6:
+            pass
+        
+        if self.__type == 7:
+            pass
+        
+        if self.__type == 8:
+            pass
+        
+        if self.__type == 9:
+            pass
+        
+        if self.__type == 10:
+            pass
+        
+        if self.__type == 11:
+            pass
 
-def retourner_random(proba_r, proba_b, proba_a, proba_d, proba_e):
-    if proba_r>0 and proba_b>0 and proba_a>0 and proba_d>0 and proba_e>0 and proba_r+proba_b+proba_a+proba_d+proba_e<1:
-        pop = [Roquette(), Bombe(), Avion(), Deflagrateur(), Etoile(), None]
-        weight = [proba_r, proba_b, proba_a, proba_d, proba_e, 1-(proba_r+proba_b+proba_a+proba_d+proba_e)]
+def retourner_random(probas, grille, ligne, colonne):
+    if probas[0]>0 and probas[1]>0 and probas[2]>0 and probas[3]>0 and probas[4]>0 and probas[0]+probas[1]+probas[2]+probas[3]+probas[4]<1:
+        pop = [Roquette(grille, ligne, colonne), Bombe(grille, ligne, colonne), Avion(grille, ligne, colonne), Deflagrateur(grille, ligne, colonne), Etoile(grille, ligne, colonne), None]
+        weight = [probas[0],probas[1],probas[2],probas[3],probas[4], 1-(probas[0]+probas[1]+probas[2]+probas[3]+probas[4])]
         rand = rd.choices(pop, weight, k=1)[0]
         if rand == None:
-            couleur = rd.choice(["Rouge", "Vert", "Jaune"])
-            return Classique(couleur)
+            couleur = rd.choice(["Rouge", "Vert", "Jaune", "Bleu", "Violet"])
+            return Classique(couleur, grille, ligne, colonne)
         else:
             return rand
     
     else:
         raise ValueError("Les probabilités d'apparitions des bonus ne sont pas valides")
 
-G = Grille(10, 0.01, 0.01, 0.01, 0.01, 0.01)
+probas = [0.01, 0.01, 0.01, 0.01, 0.01]
+G = Grille(10, probas)
