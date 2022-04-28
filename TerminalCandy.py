@@ -1,8 +1,19 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Apr 21 18:44:00 2022
-@author: hiap's
-"""
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#                                                                             #
+#  /$$   /$$  /$$                                              /$$   /$$  /$$ #
+# | $$  | $$ |__/                                             | $$  | $$ | $$ #
+# | $$  | $$  /$$   /$$$$$$    /$$$$$$   /$$   /$$   /$$$$$$$ | $$  | $$ | $$ #
+# | $$$$$$$$ | $$  |____  $$  /$$__  $$ | $$  | $$  /$$_____/ | $$$$$$$$ | $$ #
+# | $$__  $$ | $$   /$$$$$$$ | $$  \ $$ | $$  | $$ |  $$$$$$  |_____  $$ |__/ #
+# | $$  | $$ | $$  /$$__  $$ | $$  | $$ | $$  | $$  \____  $$       | $$      #
+# | $$  | $$ | $$ |  $$$$$$$ | $$$$$$$/ |  $$$$$$/  /$$$$$$$/       | $$  /$$ #
+# |__/  |__/ |__/  \_______/ | $$____/   \______/  |_______/        |__/ |__/ #
+#                            | $$                                             #
+#                            | $$                                             #
+#                            |__/                                             #
+#                                                                             #
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+
 import numpy as np
 import random as rd
 
@@ -103,7 +114,7 @@ class Grille():
         # TYPE 8 - XXDXX Ligne
         for i in range(n):
             for j in range(2,n-2):
-                cond = not((i,j+k-2) in cell for k in range(5))
+                cond = not((i,j-2) in cell or (i,j-1) in cell or (i,j) in cell or (i,j+1) in cell or (i,j+2) in cell)
                 if cond:
                     L = [M[i,j+k-2] for k in range(5)]
                     c = True
@@ -112,13 +123,16 @@ class Grille():
                             c = False
                     if c:
                         L_pattern.append(Pattern(8, (i,j)))
-                        for k in range(5):
-                            cell.append((i,j+k-2))
+                        cell.append((i,j-2))
+                        cell.append((i,j-1))
+                        cell.append((i,j))
+                        cell.append((i,j+1))
+                        cell.append((i,j+2))
         
-        # TYPE 9 - XXDXX Colonne
+        # TYPE 9 - XXDXX Colonne - NFP
         for i in range(2,n-2):
             for j in range(n):
-                cond = not((i+k-2,j) in cell for k in range(5))
+                cond = not((i-2,j) in cell or (i-1,j) in cell or (i,j) in cell or (i+1,j) in cell or (i+2,j) in cell)
                 if cond:
                     L = [M[i+k-2,j] for k in range(5)]
                     c = True
@@ -127,10 +141,13 @@ class Grille():
                             c = False
                     if c:
                         L_pattern.append(Pattern(9, (i,j)))
-                        for k in range(5):
-                            cell.append((i+k-2,j))
+                        cell.append((i-2,j))
+                        cell.append((i-1,j))
+                        cell.append((i,j))
+                        cell.append((i+1,j))
+                        cell.append((i+2,j))
         
-        # TYPE 4 - T
+        # TYPE 4 - T - F
         for i in range(0,n-2):
             for j in range(1,n-1):
                 cond = not((i,j-1) in cell or (i,j) in cell or (i,j+1) in cell or (i+1,j) in cell or (i+2,j) in cell)
@@ -148,7 +165,7 @@ class Grille():
                         cell.append((i+1,j))
                         cell.append((i+2,j))
                     
-        # TYPE 5 - T+90°
+        # TYPE 5 - T+90° - F
         for i in range(1,n-1):
             for j in range(0,n-2):
                 cond = not((i-1,j) in cell or (i,j) in cell or (i+1,j) in cell or (i,j+1) in cell or (i,j+2) in cell)
@@ -166,7 +183,7 @@ class Grille():
                         cell.append((i,j+1))
                         cell.append((i,j+2))
 
-        # TYPE 6 - T+180°
+        # TYPE 6 - T+180° - F
         for i in range(2,n):
             for j in range(1,n-1):
                 cond = not((i,j-1) in cell or (i,j) in cell or (i,j+1) in cell or (i-1,j) in cell or (i-2,j) in cell)
@@ -184,7 +201,7 @@ class Grille():
                         cell.append((i-1,j))
                         cell.append((i-2,j))
         
-        # TYPE 7 - T+270°
+        # TYPE 7 - T+270° - F
         for i in range(1,n-1):
             for j in range(2,n):
                 cond = not((i-1,j) in cell or (i,j) in cell or (i+1,j) in cell or (i,j-1) in cell or (i,j-2) in cell)
@@ -201,11 +218,45 @@ class Grille():
                         cell.append((i+1,j))
                         cell.append((i,j-1))
                         cell.append((i,j-2))
+                
+        # TYPE 1 - XRXX Ligne - NFP
+        for i in range(n):
+            for j in range(1,n-2):
+                cond = not((i,j-1) in cell or (i,j) in cell or (i,j+1) in cell or (i,j+2) in cell)
+                if cond:
+                    L = [M[i,j+k-1] for k in range(4)]
+                    c = True
+                    for e in L:
+                        if repr(e) != repr(L[1]):
+                            c = False
+                    if c:
+                        L_pattern.append(Pattern(1, (i,j)))
+                        cell.append((i,j-1))
+                        cell.append((i,j))
+                        cell.append((i,j+1))
+                        cell.append((i,j+2))
         
-        # TYPE 3 - Carré 2x2
+        # TYPE 2 - XRXX Colonne - NFP
+        for i in range(1,n-2):
+            for j in range(n):
+                cond = not((i-1,j) in cell or (i,j) in cell or (i+1,j) in cell or (i+2,j) in cell)
+                if cond:
+                    L = [M[i+k-1,j] for k in range(4)]
+                    c = True
+                    for e in L:
+                        if repr(e) != repr(L[1]):
+                            c = False
+                    if c:
+                        L_pattern.append(Pattern(2, (i,j)))
+                        cell.append((i-1,j))
+                        cell.append((i,j))
+                        cell.append((i+1,j))
+                        cell.append((i+2,j))
+        
+        # TYPE 3 - Carré 2x2 - NFP
         for i in range(n-1):
             for j in range(n-1):
-                cond = not((i+k,j+l) in cell for k in range(2) for l in range(2))
+                cond = not((i,j) in cell or (i+1,j) in cell or (i,j+1) in cell or (i+1,j+1) in cell)
                 if cond:
                     L = [M[i+k,j+l] for k in range(2) for l in range(2)]
                     c = True
@@ -214,44 +265,15 @@ class Grille():
                             c = False
                     if c:
                         L_pattern.append(Pattern(3, (i,j)))
-                        for k in range(2):
-                            for l in range(2):
-                                cell.append((i+k,j+l))
-                
-        # TYPE 1 - XRXX Ligne
-        for i in range(n):
-            for j in range(1,n-2):
-                cond = not((i,j+k-2) in cell for k in range(4))
-                if cond:
-                    L = [M[i,j+k-2] for k in range(4)]
-                    c = True
-                    for e in L:
-                        if repr(e) != repr(L[1]):
-                            c = False
-                    if c:
-                        L_pattern.append(Pattern(1, (i,j)))
-                        for k in range(4):
-                            cell.append((i,j+k-2))
-        
-        # TYPE 2 - XRXX Colonne
-        for i in range(1,n-2):
-            for j in range(n):
-                cond = not((i+k-2,j) in cell for k in range(4))
-                if cond:
-                    L = [M[i+k-2,j] for k in range(4)]
-                    c = True
-                    for e in L:
-                        if repr(e) != repr(L[1]):
-                            c = False
-                    if c:
-                        L_pattern.append(Pattern(2, (i,j)))
-                        for k in range(4):
-                            cell.append((i+k-2,j))
+                        cell.append((i,j))
+                        cell.append((i+1,j))
+                        cell.append((i,j+1))
+                        cell.append((i+1,j+1))
                             
-        # TYPE 10 - Match-3 Ligne
+        # TYPE 10 - Match-3 Ligne - NFP
         for i in range(n):
             for j in range(1,n-1):
-                cond = not((i,j+k-1) in cell for k in range(3))
+                cond = not((i,j-1) in cell or (i,j) in cell or (i,j+1) in cell)
                 if cond:
                     L = [M[i,j+k-1] for k in range(3)]
                     c = True
@@ -260,14 +282,15 @@ class Grille():
                             c = False
                     if c:
                         L_pattern.append(Pattern(10, (i,j)))
-                        for k in range(3):
-                            cell.append((i,j+k-1))
+                        cell.append((i,j))
+                        cell.append((i,j-1))
+                        cell.append((i,j+1))
                         
         
-        # TYPE 11 - Match-3 Colonne
+        # TYPE 11 - Match-3 Colonne - NFP
         for i in range(1,n-1):
             for j in range(n):
-                cond = not((i+k-1,j) in cell for k in range(3))
+                cond = not((i-1,j) in cell or (i,j) in cell or (i+1,j) in cell)
                 if cond:
                     L = [M[i+k-1,j] for k in range(3)]
                     c = True
@@ -276,8 +299,9 @@ class Grille():
                             c = False
                     if c:
                         L_pattern.append(Pattern(11, (i,j)))
-                        for k in range(3):
-                            cell.append((i+k-1,j))
+                        cell.append((i-1,j))
+                        cell.append((i,j))
+                        cell.append((i+1,j))
 
 
         return L_pattern
@@ -290,9 +314,9 @@ class Pattern():
         # Type 5: T+90°
         # Type 6: T+180°
         # Type 7: T+270°
-        # Type 3: Carré 2x2
         # Type 1: XRXX Ligne
         # Type 2: XRXX Colonne
+        # Type 3: Carré 2x2
         # Type 10: Match-3 Ligne
         # Type 11: Match-3 Colonne
         
@@ -309,7 +333,7 @@ def retourner_random(proba_r, proba_b, proba_a, proba_d, proba_e):
         weight = [proba_r, proba_b, proba_a, proba_d, proba_e, 1-(proba_r+proba_b+proba_a+proba_d+proba_e)]
         rand = rd.choices(pop, weight, k=1)[0]
         if rand == None:
-            couleur = rd.choice(["Rouge", "Vert", "Jaune", "Violet", "Bleu"])
+            couleur = rd.choice(["Rouge", "Vert", "Jaune"])
             return Classique(couleur)
         else:
             return rand
