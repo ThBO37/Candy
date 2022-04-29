@@ -109,7 +109,9 @@ class Grille():
             self.__data[i, colonne].write_coordonnees(i, colonne)
             i += (-1)
         self.__data[0, colonne] = retourner_random(self.__probas, self, 0, colonne)
-    
+
+    def remplacer(self, ligne, colonne, nouvel_element):
+        self.__data[ligne, colonne] = nouvel_element
 
     def patterns(self):
         ## PROBLEME ICI !!!
@@ -129,7 +131,7 @@ class Grille():
                         if repr(e) != repr(L[1]):
                             c = False
                     if c:
-                        L_pattern.append(Pattern(8, (i,j)))
+                        L_pattern.append(Pattern(8, slef, i, j))
                         cell.append((i,j-2))
                         cell.append((i,j-1))
                         cell.append((i,j))
@@ -147,7 +149,7 @@ class Grille():
                         if repr(e) != repr(L[1]):
                             c = False
                     if c:
-                        L_pattern.append(Pattern(9, (i,j)))
+                        L_pattern.append(Pattern(9, self, i, j))
                         cell.append((i-2,j))
                         cell.append((i-1,j))
                         cell.append((i,j))
@@ -165,7 +167,7 @@ class Grille():
                         if repr(e) != repr(L[1]):
                             c = False
                     if c:
-                        L_pattern.append(Pattern(4, (i,j)))
+                        L_pattern.append(Pattern(4, self, i, j))
                         cell.append((i,j-1))
                         cell.append((i,j))
                         cell.append((i,j+1))
@@ -183,7 +185,7 @@ class Grille():
                         if repr(e) != repr(L[1]):
                             c = False
                     if c:
-                        L_pattern.append(Pattern(5, (i,j)))
+                        L_pattern.append(Pattern(5, self, i, j))
                         cell.append((i-1,j))
                         cell.append((i,j))
                         cell.append((i+1,j))
@@ -201,7 +203,7 @@ class Grille():
                         if repr(e) != repr(L[1]):
                             c = False
                     if c:
-                        L_pattern.append(Pattern(6, (i,j)))
+                        L_pattern.append(Pattern(6, self, i, j))
                         cell.append((i,j-1))
                         cell.append((i,j))
                         cell.append((i,j+1))
@@ -219,7 +221,7 @@ class Grille():
                         if repr(e) != repr(L[1]):
                             c = False
                     if c:
-                        L_pattern.append(Pattern(7, (i,j)))
+                        L_pattern.append(Pattern(7, self, i, j))
                         cell.append((i-1,j))
                         cell.append((i,j))
                         cell.append((i+1,j))
@@ -237,7 +239,7 @@ class Grille():
                         if repr(e) != repr(L[1]):
                             c = False
                     if c:
-                        L_pattern.append(Pattern(1, (i,j)))
+                        L_pattern.append(Pattern(1, self, i, j))
                         cell.append((i,j-1))
                         cell.append((i,j))
                         cell.append((i,j+1))
@@ -254,7 +256,7 @@ class Grille():
                         if repr(e) != repr(L[1]):
                             c = False
                     if c:
-                        L_pattern.append(Pattern(2, (i,j)))
+                        L_pattern.append(Pattern(2, self, i, j))
                         cell.append((i-1,j))
                         cell.append((i,j))
                         cell.append((i+1,j))
@@ -271,7 +273,7 @@ class Grille():
                         if repr(e) != repr(L[1]):
                             c = False
                     if c:
-                        L_pattern.append(Pattern(3, (i,j)))
+                        L_pattern.append(Pattern(3, self, i, j))
                         cell.append((i,j))
                         cell.append((i+1,j))
                         cell.append((i,j+1))
@@ -288,7 +290,7 @@ class Grille():
                         if repr(e) != repr(L[1]):
                             c = False
                     if c:
-                        L_pattern.append(Pattern(10, (i,j)))
+                        L_pattern.append(Pattern(10, self, i, j))
                         cell.append((i,j))
                         cell.append((i,j-1))
                         cell.append((i,j+1))
@@ -305,7 +307,7 @@ class Grille():
                         if repr(e) != repr(L[1]):
                             c = False
                     if c:
-                        L_pattern.append(Pattern(11, (i,j)))
+                        L_pattern.append(Pattern(11, self, i, j))
                         cell.append((i-1,j))
                         cell.append((i,j))
                         cell.append((i+1,j))
@@ -327,40 +329,70 @@ class Pattern():
         # Type 10: Match-3 Ligne
         # Type 11: Match-3 Colonne
         
-    def __init__(self, pattern_type, loc_boost):
+    def __init__(self, pattern_type, grille, ligne, colonne):
         self.__type = pattern_type
-        self.__loc_boost = loc_boost
+        self.__grille = grille
+        self.__ligne = ligne
+        self.__colonne = colonne
 
     def __repr__(self):
-        return "Pattern de type {} en {}".format(str(self.__type), str(self.__loc_boost))
+        return "Pattern de type {} en {}".format(str(self.__type), str((self.__ligne, self.__colonne)))
     
     def activer(self):
         if self.__type == 1:
-            pass
+            for i in range(4):
+                self.__grille.detruire(self.__ligne+2, self.__colonne)
+            self.__grille.remplacer(self.__ligne, self.__colonne, Roquette(self.__grille, self.__ligne, self.__colonne))
         
         if self.__type == 2:
-            pass
+            for i in range(-1,3):
+                self._grille.detruire(self.__ligne, self.__colonne+i)
+            self.__grille.remplacer(self.__ligne, self.__colonne, Roquette(self.__ligne, self.__colonne))
         
         if self.__type == 3:
-            pass
+            for i in range(2):
+                for j in range(2):
+                    self.__grille.detruire(self.__ligne+1, self.__colonne+j)
+            self.__grille.remplacer(self.__ligne, self.__colonne, Avion(self.__grille, self.__ligne, self.__colonne))            
         
         if self.__type == 4:
-            pass
+            for i in range(3):
+                self.__grille.detruire(self.__ligne+2, self.__colonne)
+            self.__grille.detruire(self.__ligne, self.__colonne-1)
+            self.__grille.detruire(self.__ligne, self.__colonne+1)
+            self.__grille.remplacer(self.__ligne, self.__colonne, Bombe(self.__grille, self.__ligne, self.__colonne))
         
         if self.__type == 5:
-            pass
+            for i in range(3):
+                self.__grille.detruire(self.__ligne+1, self.__colonne)
+            self.__grille.detruire(self.__ligne, self.__colonne+1)
+            self.__grille.detruire(self.__ligne, self.__colonne+2)
+            self.__grille.remplacer(self.__ligne, self.__colonne, Bombe(self.__grille, self.__ligne, self.__colonne))
         
         if self.__type == 6:
-            pass
+            for i in range(3):
+                self.__grille.detruire(self.__ligne, self.__colonne)
+            self.__grille.detruire(self.__ligne, self.__colonne-1)
+            self.__grille.detruire(self.__ligne, self.__colonne+1)
+            self.__grille.remplacer(self.__ligne, self.__colonne, Bombe(self.__grille, self.__ligne, self.__colonne))
         
         if self.__type == 7:
-            pass
+            for i in range(3):
+                self.__grille.detruire(self.__ligne+1, self.__colonne)
+            self.__grille.detruire(self.__ligne, self.__colonne+1)
+            self.__grille.detruire(self.__ligne, self.__colonne+2)
+            self.__grille.remplacer(self.__ligne, self.__colonne, Bombe(self.__grille, self.__ligne, self.__colonne))
         
         if self.__type == 8:
-            pass
+            for i in range(5):
+                self.__grille.detruire(self.__ligne+2, self.__colonne)
+            self.__grille.remplacer(self.__ligne, self.__colonne, Deflagrateur(self.__grille, self.__ligne, self.__colonne))
         
         if self.__type == 9:
-            pass
+            for i in range(-2,3):
+                self._grille.detruire(self.__ligne, self.__colonne+i)
+            self.__grille.remplacer(self.__ligne, self.__colonne, Deflagrateur(self.__ligne, self.__colonne))
+            
         
         if self.__type == 10:
             pass
