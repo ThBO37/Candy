@@ -1,0 +1,475 @@
+import numpy as np
+import xml.etree.ElementTree as ET
+
+class Grille:
+    def __init__(self, path):
+        arbreXML = ET.parse(path)
+        tronc = arbreXML.getroot()
+
+        nom = tronc.attrib['titre']
+        couleurs = tronc.attrib['couleurs']
+        self._nb_colonnes = int(tronc.attrib['nb_colonnes'])
+        self._nb_lignes = int(tronc.attrib['nb_lignes'])
+
+        self._cellules = np.array([[None for j in range(self._nb_colonnes)] for i in range(self._nb_lignes)])
+
+        for i in tronc[0]:
+            ligne = int(i.attrib['ligne'])
+            colonne = int(i.attrib['colonne'])
+            
+            try:
+                gel = int(i.attrib['niveau_gel'])
+            except:
+                pass
+            
+            typ = i.tag
+
+            if typ=='Cellule_Vide':
+                cell = CellVide(self, (ligne, colonne), ortn, flux)
+                
+            else:
+                ortn = i.attrib['orientation']
+                flux = i.attrib['flux']
+                cont = i.attrib['contenu']
+                if cont in couleurs:
+                    elem = EltClassique(cont)
+
+                elif cont == 'etoile':
+                    elem = Etoile()
+                    
+                elif cont == 'avion':
+                    elem = Avion()
+
+                elif cont == 'bombe':
+                    elem = Bombe()
+
+                elif cont == 'deflagrateur':
+                    elem = Deflagrateur()
+
+                elif cont == 'roquette':
+                    elem = Roquette()
+                    
+                else:
+                    raise ValueError(("L'élément à la ligne {} et à la colonne {} n'existe pas.").format(ligne, colonne))
+
+                if typ=='Cellule':
+                    cell = CellNormale(self, (ligne, colonne), ortn, flux, elem)
+
+                else:
+                    cell = CellGelee(self, (ligne, colonne), ortn, flux, elem, gel)
+
+            self._cellules[ligne, colonne] = cell
+
+    def __str__(self):
+        return str(np.array([[str(self._cellules[i,j]) for j in range(self._nb_colonnes)] for i in range(self._nb_lignes)]))
+    
+    def __getitem__(self, coor):
+        return str(self._cellules[coor[0], coor[1]])
+
+    def __setitem__(self, coor, nouvelle_valeur):
+        self._cellules[coor] = nouvelle_valeur
+
+    def patterns(self):
+        M = self._cellules
+        n = np.shape(M)[0]
+        p = np.shape(M)[1]
+        L_pattern = []
+        cell = []
+        
+        # TYPE 8 - XXDXX Ligne
+        for i in range(n):
+            for j in range(2,p-2):
+                cond = not((i,j-2) in cell or (i,j-1) in cell or (i,j) in cell or (i,j+1) in cell or (i,j+2) in cell)
+                if cond:
+                    L = [M[i,j+k-2] for k in range(5)]
+                    c = True
+                    for e in L:
+                        if str(e) != str(L[1]) or isinstance(e, CellVide):
+                            c = False
+                    if c:
+                        L_pattern.append(Pattern(8, self, (i, j)))
+                        cell.append((i,j-2))
+                        cell.append((i,j-1))
+                        cell.append((i,j))
+                        cell.append((i,j+1))
+                        cell.append((i,j+2))
+        
+        # TYPE 9 - XXDXX Colonne - NFP
+        for i in range(2,n-2):
+            for j in range(p):
+                cond = not((i-2,j) in cell or (i-1,j) in cell or (i,j) in cell or (i+1,j) in cell or (i+2,j) in cell)
+                if cond:
+                    L = [M[i+k-2,j] for k in range(5)]
+                    c = True
+                    for e in L:
+                        if str(e) != str(L[1]) or isinstance(e, CellVide):
+                            c = False
+                    if c:
+                        L_pattern.append(Pattern(9, self, (i, j)))
+                        cell.append((i-2,j))
+                        cell.append((i-1,j))
+                        cell.append((i,j))
+                        cell.append((i+1,j))
+                        cell.append((i+2,j))
+        
+        # TYPE 4 - T - F
+        for i in range(0,n-2):
+            for j in range(1,n-1):
+                cond = not((i,j-1) in cell or (i,j) in cell or (i,j+1) in cell or (i+1,j) in cell or (i+2,j) in cell)
+                if cond:
+                    L = [M[i,j-1], M[i,j], M[i,j+1], M[i+1,j], M[i+2,j]]
+                    c = True
+                    for e in L:
+                        if str(e) != str(L[1]) or isinstance(e, CellVide):
+                            c = False
+                    if c:
+                        L_pattern.append(Pattern(4, self, i, j))
+                        cell.append((i,j-1))
+                        cell.append((i,j))
+                        cell.append((i,j+1))
+                        cell.append((i+1,j))
+                        cell.append((i+2,j))
+                    
+        # TYPE 5 - T+90° - F
+        for i in range(1,n-1):
+            for j in range(0,p-2):
+                cond = not((i-1,j) in cell or (i,j) in cell or (i+1,j) in cell or (i,j+1) in cell or (i,j+2) in cell)
+                if cond:
+                    L = [M[i-1,j], M[i,j], M[i+1,j], M[i,j+1], M[i,j+2]]
+                    c = True
+                    for e in L:
+                        if str(e) != str(L[1]) or isinstance(e, CellVide):
+                            c = False
+                    if c:
+                        L_pattern.append(Pattern(5, self, (i, j)))
+                        cell.append((i-1,j))
+                        cell.append((i,j))
+                        cell.append((i+1,j))
+                        cell.append((i,j+1))
+                        cell.append((i,j+2))
+
+        # TYPE 6 - T+180° - F
+        for i in range(2,n):
+            for j in range(1,p-1):
+                cond = not((i,j-1) in cell or (i,j) in cell or (i,j+1) in cell or (i-1,j) in cell or (i-2,j) in cell)
+                if cond:
+                    L = [M[i,j-1], M[i,j], M[i,j+1], M[i-2,j], M[i-1,j]]
+                    c = True
+                    for e in L:
+                        if str(e) != str(L[1]) or isinstance(e, CellVide):
+                            c = False
+                    if c:
+                        L_pattern.append(Pattern(6, self, (i, j)))
+                        cell.append((i,j-1))
+                        cell.append((i,j))
+                        cell.append((i,j+1))
+                        cell.append((i-1,j))
+                        cell.append((i-2,j))
+        
+        # TYPE 7 - T+270° - F
+        for i in range(1,n-1):
+            for j in range(2,p):
+                cond = not((i-1,j) in cell or (i,j) in cell or (i+1,j) in cell or (i,j-1) in cell or (i,j-2) in cell)
+                if cond:
+                    L = [M[i-1,j], M[i,j], M[i+1,j], M[i,j-2], M[i,j-1]]
+                    c = True
+                    for e in L:
+                        if str(e) != str(L[1]) or isinstance(e, CellVide):
+                            c = False
+                    if c:
+                        L_pattern.append(Pattern(7, self, (i, j)))
+                        cell.append((i-1,j))
+                        cell.append((i,j))
+                        cell.append((i+1,j))
+                        cell.append((i,j-1))
+                        cell.append((i,j-2))
+                
+        # TYPE 1 - XRXX Ligne
+        for i in range(n):
+            for j in range(1,p-2):
+                cond = not((i,j-1) in cell or (i,j) in cell or (i,j+1) in cell or (i,j+2) in cell)
+                if cond:
+                    L = [M[i,j+k-1] for k in range(4)]
+                    c = True
+                    for e in L:
+                        if str(e) != str(L[1]) or isinstance(e, CellVide):
+                            c = False
+                    if c:
+                        L_pattern.append(Pattern(1, self, (i, j)))
+                        cell.append((i,j-1))
+                        cell.append((i,j))
+                        cell.append((i,j+1))
+                        cell.append((i,j+2))
+        
+        # TYPE 2 - XRXX Colonne
+        for i in range(1,n-2):
+            for j in range(p):
+                cond = not((i-1,j) in cell or (i,j) in cell or (i+1,j) in cell or (i+2,j) in cell)
+                if cond:
+                    L = [M[i+k-1,j] for k in range(4)]
+                    c = True
+                    for e in L:
+                        if str(e) != str(L[1]) or isinstance(e, CellVide):
+                            c = False
+                    if c:
+                        L_pattern.append(Pattern(2, self, (i, j)))
+                        cell.append((i-1,j))
+                        cell.append((i,j))
+                        cell.append((i+1,j))
+                        cell.append((i+2,j))
+        
+        # TYPE 3 - Carré 2x2
+        for i in range(n-1):
+            for j in range(p-1):
+                cond = not((i,j) in cell or (i+1,j) in cell or (i,j+1) in cell or (i+1,j+1) in cell)
+                if cond:
+                    L = [M[i+k,j+l] for k in range(2) for l in range(2)]
+                    c = True
+                    for e in L:
+                        if str(e) != str(L[1])  or isinstance(e, CellVide):
+                            c = False
+                    if c:
+                        L_pattern.append(Pattern(3, self, (i, j)))
+                        cell.append((i,j))
+                        cell.append((i+1,j))
+                        cell.append((i,j+1))
+                        cell.append((i+1,j+1))
+                            
+        # TYPE 10 - Match-3 Ligne
+        for i in range(n):
+            for j in range(1,p-1):
+                cond = not((i,j-1) in cell or (i,j) in cell or (i,j+1) in cell)
+                if cond:
+                    L = [M[i,j+k-1] for k in range(3)]
+                    c = True
+                    for e in L:
+                        if str(e) != str(L[1]) or isinstance(e, CellVide):
+                            c = False
+                    if c:
+                        L_pattern.append(Pattern(10, self, (i, j)))
+                        cell.append((i,j))
+                        cell.append((i,j-1))
+                        cell.append((i,j+1))
+                        
+        
+        # TYPE 11 - Match-3 Colonne
+        for i in range(1,n-1):
+            for j in range(p):
+                cond = not((i-1,j) in cell or (i,j) in cell or (i+1,j) in cell)
+                if cond:
+                    L = [M[i+k-1,j] for k in range(3)]
+                    c = True
+                    for e in L:
+                        if str(e) != str(L[1]) or isinstance(e, CellVide):
+                            c = False
+                    if c:
+                        L_pattern.append(Pattern(11, self, (i, j)))
+                        cell.append((i-1,j))
+                        cell.append((i,j))
+                        cell.append((i+1,j))
+
+
+        return L_pattern
+
+    def casser_patterns(self):
+        L_pattern = self.patterns()
+        for i in L_pattern:
+            i.activer()
+
+class Cellule:
+    def __init__(self, grille, coor, ortn, flux):
+        self._grille = grille
+        self._coor = coor
+        self._ortn = ortn
+        self._flux = flux
+
+class CellVide(Cellule):
+    def __init__(self, grille, coor, ortn, flux):
+        super().__init__(grille, coor, ortn, flux)
+
+    def __str__(self):
+        return '  '
+
+class CellNormale(Cellule):
+    def __init__(self, grille, coor, ortn, flux, element):
+        super().__init__(grille, coor, ortn, flux)
+        self._element = element
+
+    def __str__(self):
+        return repr(self._element)
+
+    def detruire(self):
+        self._element = None
+
+    def remplacer(self, nouvel_element):
+        self._element = nouvel_element
+
+class CellGelee(Cellule):
+    def __init__(self, grille, coor, ortn, flux, element, niveau_gel):
+        super().__init__(grille, coor, ortn, flux)
+        self._element = element
+        self._niveau_gel = niveau_gel
+
+    def __str__(self):
+        return repr(self._element)
+
+    def detruire(self):
+        self._element = None
+
+    def remplacer(self, nouvel_element):
+        self._element = nouvel_element
+
+class Element:
+    def __init__(self):
+        pass
+
+class EltClassique(Element):
+    def __init__(self, couleur):
+        super().__init__()
+        self._couleur = couleur
+
+    def __repr__(self):
+        if self._couleur == 'vert':
+            return "🟢"
+        elif self._couleur == 'jaune':
+            return "🟡"
+        elif self._couleur == 'rouge':
+            return "🔴"
+        elif self._couleur == 'bleu':
+            return "🔵"
+        elif self._couleur == 'rose':
+            return "🟣"
+        else:
+            return " "
+
+class Bonus(Element):
+    def __init__(self):
+        super().__init__()
+
+class Etoile(Element):
+    def __init__(self):
+        super().__init__()
+
+    def __repr__(self):
+        return "⭐"
+
+class Avion(Bonus):
+    def __init__(self):
+        super().__init__()
+
+    def __repr__(self):
+        return "✈"
+
+class Bombe(Bonus):
+    def __init__(self):
+        super().__init__()
+
+    def __repr__(self):
+        return "💣"
+
+class Deflagrateur(Bonus):
+    def __init__(self):
+        super().__init__()
+
+    def __repr__(self):
+        return "🔫"
+
+class Roquette(Bonus):
+    def __init__(self):
+        super().__init__()
+
+    def __repr__(self):
+        return "🚀"
+
+class Pattern:
+    # TYPES DE PATTERNS: (triés par force)
+        # Type 8: XXDXX Ligne
+        # Type 9: XXDXX Colonne
+        # Type 4: T
+        # Type 5: T+90°
+        # Type 6: T+180°
+        # Type 7: T+270°
+        # Type 1: XRXX Ligne
+        # Type 2: XRXX Colonne
+        # Type 3: Carré 2x2
+        # Type 10: Match-3 Ligne
+        # Type 11: Match-3 Colonne
+        
+    def __init__(self, typ, grille, coor):
+        self._grille = grille
+        self._coor = coor
+        self._type = typ
+        
+    def __repr__(self):
+        return "Pattern de type {} en {}".format(str(self._type), str(self._coor))
+
+    def activer(self):
+        if self._type == 1:
+            self._grille._cellules[self._coor[0], self._coor[1]-1].detruire()
+            self._grille._cellules[self._coor[0], self._coor[1]+1].detruire()
+            self._grille._cellules[self._coor[0], self._coor[1]+2].detruire()
+            self._grille._cellules[self._coor[0], self._coor[1]].remplacer(Roquette())
+            
+        if self._type == 2:
+            self._grille._cellules[self._coor[0]-1, self._coor[1]].detruire()
+            self._grille._cellules[self._coor[0]+1, self._coor[1]].detruire()
+            self._grille._cellules[self._coor[0]+2, self._coor[1]].detruire()
+            self._grille._cellules[self._coor[0], self._coor[1]].remplacer(Roquette())
+        
+        if self._type == 3:
+            self._grille._cellules[self._coor[0]+1, self._coor[1]].detruire()
+            self._grille._cellules[self._coor[0]+1, self._coor[1]+1].detruire()
+            self._grille._cellules[self._coor[0], self._coor[1]+1].detruire()
+            self._grille._cellules[self._coor[0], self._coor[1]].remplacer(Avion())
+        
+        if self._type == 4:
+            self._grille._cellules[self._coor[0], self._coor[1]-1].detruire()
+            self._grille._cellules[self._coor[0], self._coor[1]+1].detruire()
+            self._grille._cellules[self._coor[0]+1, self._coor[1]].detruire()
+            self._grille._cellules[self._coor[0]+2, self._coor[1]].detruire()
+            self._grille._cellules[self._coor[0], self._coor[1]].remplacer(Bombe())
+
+        if self._type == 5:
+            self._grille._cellules[self._coor[0], self._coor[1]] = Bombe()
+            self._grille._cellules[self._coor[0]-1, self._coor[1]].detruire()
+            self._grille._cellules[self._coor[0]+1, self._coor[1]].detruire()
+            self._grille._cellules[self._coor[0], self._coor[1]+1].detruire()
+            self._grille._cellules[self._coor[0], self._coor[1]+2].detruire()
+        
+        if self._type == 6:
+            self._grille._cellules[self._coor[0]-1, self._coor[1]].detruire()
+            self._grille._cellules[self._coor[0]-2, self._coor[1]].detruire()
+            self._grille._cellules[self._coor[0], self._coor[1]-1].detruire()
+            self._grille._cellules[self._coor[0], self._coor[1]-2].detruire()
+            self._grille._cellules[self._coor[0], self._coor[1]].remplacer(Bombe())
+        
+        if self._type == 7:
+            self._grille._cellules[self._coor[0]-1, self._coor[1]].detruire()
+            self._grille._cellules[self._coor[0]+1, self._coor[1]].detruire()
+            self._grille._cellules[self._coor[0], self._coor[1]-1].detruire()
+            self._grille._cellules[self._coor[0], self._coor[1]-2].detruire()
+            self._grille._cellules[self._coor[0], self._coor[1]].remplacer(Bombe())
+        
+        if self._type == 8:
+            self._grille._cellules[self._coor[0], self._coor[1]-2].detruire()
+            self._grille._cellules[self._coor[0], self._coor[1]-1].detruire()
+            self._grille._cellules[self._coor[0], self._coor[1]+1].detruire()
+            self._grille._cellules[self._coor[0], self._coor[1]+2].detruire()
+            self._grille._cellules[self._coor[0], self._coor[1]].remplacer(Deflagrateur())
+
+        if self._type == 9:
+            self._grille._cellules[self._coor[0]-2, self._coor[1]].detruire()
+            self._grille._cellules[self._coor[0]-1, self._coor[1]].detruire()
+            self._grille._cellules[self._coor[0]+1, self._coor[1]].detruire()
+            self._grille._cellules[self._coor[0]+2, self._coor[1]].detruire()
+            self._grille._cellules[self._coor[0], self._coor[1]].remplacer(Deflagrateur())
+        
+        if self._type == 10:
+            self._grille._cellules[self._coor[0], self._coor[1]-1].detruire()
+            self._grille._cellules[self._coor[0], self._coor[1]+1].detruire()
+            self._grille._cellules[self._coor[0], self._coor[1]].detruire()
+        
+        if self._type == 11:
+            self._grille._cellules[self._coor[0]-1, self._coor[1]].detruire()
+            self._grille._cellules[self._coor[0]+1, self._coor[1]].detruire()
+            self._grille._cellules[self._coor[0], self._coor[1]].detruire()
