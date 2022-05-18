@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue May 17 22:31:17 2022
+
+@author: bouti
+"""
+
 import numpy as np
 import xml.etree.ElementTree as ET
 
@@ -20,7 +27,17 @@ class Grille:
             try:
                 gel = int(i.attrib['niveau_gel'])
             except:
-                pass
+                gel = None
+            
+            try:
+                ortn = i.attrib['orientation']
+            except:
+                ortn = None
+                
+            try:
+                flux = i.attrib['flux']
+            except:
+                flux = None            
             
             typ = i.tag
 
@@ -28,26 +45,28 @@ class Grille:
                 cell = CellVide(self, (ligne, colonne), ortn, flux)
                 
             else:
-                ortn = i.attrib['orientation']
-                flux = i.attrib['flux']
+                
                 cont = i.attrib['contenu']
                 if cont in couleurs:
                     elem = EltClassique(cont)
 
-                elif cont == 'etoile':
+                elif cont in ['etoile','Etoile']:
                     elem = Etoile()
                     
-                elif cont == 'avion':
+                elif cont in ['avion', 'Avion']:
                     elem = Avion()
 
-                elif cont == 'bombe':
+                elif cont in ['bombe', 'Bombe']:
                     elem = Bombe()
 
-                elif cont == 'deflagrateur':
+                elif cont in ['deflagrateur','Deflagrateur']:
                     elem = Deflagrateur()
 
-                elif cont == 'roquette':
-                    elem = Roquette()
+                elif 'Roquette' in cont:
+                    if 'horizontale' in cont:
+                        elem = Roquette('h')
+                    else:
+                        elem = Roquette('v')
                     
                 else:
                     raise ValueError(("L'élément à la ligne {} et à la colonne {} n'existe pas.").format(ligne, colonne))
@@ -87,7 +106,7 @@ class Grille:
                         if str(e) != str(L[1]) or isinstance(e, CellVide):
                             c = False
                     if c:
-                        L_pattern.append(Pattern(8, self, (i, j)))
+                        L_pattern.append(Pattern(8, self, (i, j), L[1]))
                         cell.append((i,j-2))
                         cell.append((i,j-1))
                         cell.append((i,j))
@@ -105,7 +124,7 @@ class Grille:
                         if str(e) != str(L[1]) or isinstance(e, CellVide):
                             c = False
                     if c:
-                        L_pattern.append(Pattern(9, self, (i, j)))
+                        L_pattern.append(Pattern(9, self, (i, j), L[1]))
                         cell.append((i-2,j))
                         cell.append((i-1,j))
                         cell.append((i,j))
@@ -114,7 +133,7 @@ class Grille:
         
         # TYPE 4 - T - F
         for i in range(0,n-2):
-            for j in range(1,n-1):
+            for j in range(1,p-1):
                 cond = not((i,j-1) in cell or (i,j) in cell or (i,j+1) in cell or (i+1,j) in cell or (i+2,j) in cell)
                 if cond:
                     L = [M[i,j-1], M[i,j], M[i,j+1], M[i+1,j], M[i+2,j]]
@@ -123,7 +142,7 @@ class Grille:
                         if str(e) != str(L[1]) or isinstance(e, CellVide):
                             c = False
                     if c:
-                        L_pattern.append(Pattern(4, self, i, j))
+                        L_pattern.append(Pattern(4, self, (i, j), L[1]))
                         cell.append((i,j-1))
                         cell.append((i,j))
                         cell.append((i,j+1))
@@ -141,7 +160,7 @@ class Grille:
                         if str(e) != str(L[1]) or isinstance(e, CellVide):
                             c = False
                     if c:
-                        L_pattern.append(Pattern(5, self, (i, j)))
+                        L_pattern.append(Pattern(5, self, (i, j), L[1]))
                         cell.append((i-1,j))
                         cell.append((i,j))
                         cell.append((i+1,j))
@@ -159,7 +178,7 @@ class Grille:
                         if str(e) != str(L[1]) or isinstance(e, CellVide):
                             c = False
                     if c:
-                        L_pattern.append(Pattern(6, self, (i, j)))
+                        L_pattern.append(Pattern(6, self, (i, j), L[1]))
                         cell.append((i,j-1))
                         cell.append((i,j))
                         cell.append((i,j+1))
@@ -177,7 +196,7 @@ class Grille:
                         if str(e) != str(L[1]) or isinstance(e, CellVide):
                             c = False
                     if c:
-                        L_pattern.append(Pattern(7, self, (i, j)))
+                        L_pattern.append(Pattern(7, self, (i, j), L[1]))
                         cell.append((i-1,j))
                         cell.append((i,j))
                         cell.append((i+1,j))
@@ -195,7 +214,7 @@ class Grille:
                         if str(e) != str(L[1]) or isinstance(e, CellVide):
                             c = False
                     if c:
-                        L_pattern.append(Pattern(1, self, (i, j)))
+                        L_pattern.append(Pattern(1, self, (i, j), L[1]))
                         cell.append((i,j-1))
                         cell.append((i,j))
                         cell.append((i,j+1))
@@ -212,7 +231,7 @@ class Grille:
                         if str(e) != str(L[1]) or isinstance(e, CellVide):
                             c = False
                     if c:
-                        L_pattern.append(Pattern(2, self, (i, j)))
+                        L_pattern.append(Pattern(2, self, (i, j), L[1]))
                         cell.append((i-1,j))
                         cell.append((i,j))
                         cell.append((i+1,j))
@@ -229,7 +248,7 @@ class Grille:
                         if str(e) != str(L[1])  or isinstance(e, CellVide):
                             c = False
                     if c:
-                        L_pattern.append(Pattern(3, self, (i, j)))
+                        L_pattern.append(Pattern(3, self, (i, j), L[1]))
                         cell.append((i,j))
                         cell.append((i+1,j))
                         cell.append((i,j+1))
@@ -246,7 +265,7 @@ class Grille:
                         if str(e) != str(L[1]) or isinstance(e, CellVide):
                             c = False
                     if c:
-                        L_pattern.append(Pattern(10, self, (i, j)))
+                        L_pattern.append(Pattern(10, self, (i, j), L[1]))
                         cell.append((i,j))
                         cell.append((i,j-1))
                         cell.append((i,j+1))
@@ -263,7 +282,7 @@ class Grille:
                         if str(e) != str(L[1]) or isinstance(e, CellVide):
                             c = False
                     if c:
-                        L_pattern.append(Pattern(11, self, (i, j)))
+                        L_pattern.append(Pattern(11, self, (i, j), L[1]))
                         cell.append((i-1,j))
                         cell.append((i,j))
                         cell.append((i+1,j))
@@ -275,6 +294,26 @@ class Grille:
         L_pattern = self.patterns()
         for i in L_pattern:
             i.activer()
+    
+    def map_flux(self):
+        M = np.zeros((self._nb_lignes, self._nb_colonnes), dtype=str)
+        for i in range(self._nb_lignes):
+            for j in range(self._nb_colonnes):
+                if self._cellules[i,j]._flux == 'Source':
+                    M[i,j] = '●'
+                elif self._cellules[i,j]._ortn == 'Haut':
+                    M[i,j] = '↑'
+                elif self._cellules[i,j]._ortn == 'Bas':
+                    M[i,j] = '↓'
+                elif self._cellules[i,j]._ortn == 'Gauche':
+                    M[i,j] = '←'
+                elif self._cellules[i,j]._ortn == 'Droit':
+                    M[i,j] = '→'
+                elif self._cellules[i,j]._flux == 'Puits':
+                    M[i,j] = '○'
+                else:
+                    M[i,j] = ' '
+        return M
 
 class Cellule:
     def __init__(self, grille, coor, ortn, flux):
@@ -329,16 +368,16 @@ class EltClassique(Element):
         self._couleur = couleur
 
     def __repr__(self):
-        if self._couleur == 'vert':
-            return "🟢"
-        elif self._couleur == 'jaune':
-            return "🟡"
-        elif self._couleur == 'rouge':
-            return "🔴"
-        elif self._couleur == 'bleu':
-            return "🔵"
-        elif self._couleur == 'rose':
-            return "🟣"
+        if self._couleur in ['vert', 'green']:
+            return "💚"
+        elif self._couleur in ['jaune', 'yellow']:
+            return "💛"
+        elif self._couleur in ['rouge', 'red']:
+            return "🧡"
+        elif self._couleur in ['bleu', 'blue']:
+            return "💙"
+        elif self._couleur in ['rose', 'magenta']:
+            return "💜"
         else:
             return " "
 
@@ -375,8 +414,9 @@ class Deflagrateur(Bonus):
         return "🔫"
 
 class Roquette(Bonus):
-    def __init__(self):
+    def __init__(self, direction):
         super().__init__()
+        self._direction = direction
 
     def __repr__(self):
         return "🚀"
@@ -395,81 +435,96 @@ class Pattern:
         # Type 10: Match-3 Ligne
         # Type 11: Match-3 Colonne
         
-    def __init__(self, typ, grille, coor):
+    def __init__(self, typ, grille, coor, element):
         self._grille = grille
+        self._el = element
         self._coor = coor
         self._type = typ
         
     def __repr__(self):
-        return "Pattern de type {} en {}".format(str(self._type), str(self._coor))
+        return "Pattern de type {} ({}) en {}".format(str(self._type), str(self._el), str(self._coor))
 
     def activer(self):
-        if self._type == 1:
-            self._grille._cellules[self._coor[0], self._coor[1]-1].detruire()
-            self._grille._cellules[self._coor[0], self._coor[1]+1].detruire()
-            self._grille._cellules[self._coor[0], self._coor[1]+2].detruire()
-            self._grille._cellules[self._coor[0], self._coor[1]].remplacer(Roquette())
+        print(type(self._grille._cellules[self._coor[0], self._coor[1]]._element))
+        if isinstance(self._grille._cellules[self._coor[0], self._coor[1]]._element, EltClassique):
+            print("Ca marche")
+            if self._type == 1:
+                self._grille._cellules[self._coor[0], self._coor[1]-1].detruire()
+                self._grille._cellules[self._coor[0], self._coor[1]+1].detruire()
+                self._grille._cellules[self._coor[0], self._coor[1]+2].detruire()
+                self._grille._cellules[self._coor[0], self._coor[1]].remplacer(Roquette())
+                
+            if self._type == 2:
+                self._grille._cellules[self._coor[0]-1, self._coor[1]].detruire()
+                self._grille._cellules[self._coor[0]+1, self._coor[1]].detruire()
+                self._grille._cellules[self._coor[0]+2, self._coor[1]].detruire()
+                self._grille._cellules[self._coor[0], self._coor[1]].remplacer(Roquette())
             
-        if self._type == 2:
-            self._grille._cellules[self._coor[0]-1, self._coor[1]].detruire()
-            self._grille._cellules[self._coor[0]+1, self._coor[1]].detruire()
-            self._grille._cellules[self._coor[0]+2, self._coor[1]].detruire()
-            self._grille._cellules[self._coor[0], self._coor[1]].remplacer(Roquette())
+            if self._type == 3:
+                self._grille._cellules[self._coor[0]+1, self._coor[1]].detruire()
+                self._grille._cellules[self._coor[0]+1, self._coor[1]+1].detruire()
+                self._grille._cellules[self._coor[0], self._coor[1]+1].detruire()
+                self._grille._cellules[self._coor[0], self._coor[1]].remplacer(Avion())
+            
+            if self._type == 4:
+                self._grille._cellules[self._coor[0], self._coor[1]-1].detruire()
+                self._grille._cellules[self._coor[0], self._coor[1]+1].detruire()
+                self._grille._cellules[self._coor[0]+1, self._coor[1]].detruire()
+                self._grille._cellules[self._coor[0]+2, self._coor[1]].detruire()
+                self._grille._cellules[self._coor[0], self._coor[1]].remplacer(Bombe())
+    
+            if self._type == 5:
+                self._grille._cellules[self._coor[0], self._coor[1]] = Bombe()
+                self._grille._cellules[self._coor[0]-1, self._coor[1]].detruire()
+                self._grille._cellules[self._coor[0]+1, self._coor[1]].detruire()
+                self._grille._cellules[self._coor[0], self._coor[1]+1].detruire()
+                self._grille._cellules[self._coor[0], self._coor[1]+2].detruire()
+            
+            if self._type == 6:
+                self._grille._cellules[self._coor[0]-1, self._coor[1]].detruire()
+                self._grille._cellules[self._coor[0]-2, self._coor[1]].detruire()
+                self._grille._cellules[self._coor[0], self._coor[1]-1].detruire()
+                self._grille._cellules[self._coor[0], self._coor[1]-2].detruire()
+                self._grille._cellules[self._coor[0], self._coor[1]].remplacer(Bombe())
+            
+            if self._type == 7:
+                self._grille._cellules[self._coor[0]-1, self._coor[1]].detruire()
+                self._grille._cellules[self._coor[0]+1, self._coor[1]].detruire()
+                self._grille._cellules[self._coor[0], self._coor[1]-1].detruire()
+                self._grille._cellules[self._coor[0], self._coor[1]-2].detruire()
+                self._grille._cellules[self._coor[0], self._coor[1]].remplacer(Bombe())
+            
+            if self._type == 8:
+                self._grille._cellules[self._coor[0], self._coor[1]-2].detruire()
+                self._grille._cellules[self._coor[0], self._coor[1]-1].detruire()
+                self._grille._cellules[self._coor[0], self._coor[1]+1].detruire()
+                self._grille._cellules[self._coor[0], self._coor[1]+2].detruire()
+                self._grille._cellules[self._coor[0], self._coor[1]].remplacer(Deflagrateur())
+    
+            if self._type == 9:
+                self._grille._cellules[self._coor[0]-2, self._coor[1]].detruire()
+                self._grille._cellules[self._coor[0]-1, self._coor[1]].detruire()
+                self._grille._cellules[self._coor[0]+1, self._coor[1]].detruire()
+                self._grille._cellules[self._coor[0]+2, self._coor[1]].detruire()
+                self._grille._cellules[self._coor[0], self._coor[1]].remplacer(Deflagrateur())
+            
+            if self._type == 10:
+                self._grille._cellules[self._coor[0], self._coor[1]-1].detruire()
+                self._grille._cellules[self._coor[0], self._coor[1]+1].detruire()
+                self._grille._cellules[self._coor[0], self._coor[1]].detruire()
+            
+            if self._type == 11:
+                self._grille._cellules[self._coor[0]-1, self._coor[1]].detruire()
+                self._grille._cellules[self._coor[0]+1, self._coor[1]].detruire()
+                self._grille._cellules[self._coor[0], self._coor[1]].detruire()
         
-        if self._type == 3:
-            self._grille._cellules[self._coor[0]+1, self._coor[1]].detruire()
-            self._grille._cellules[self._coor[0]+1, self._coor[1]+1].detruire()
-            self._grille._cellules[self._coor[0], self._coor[1]+1].detruire()
-            self._grille._cellules[self._coor[0], self._coor[1]].remplacer(Avion())
-        
-        if self._type == 4:
-            self._grille._cellules[self._coor[0], self._coor[1]-1].detruire()
-            self._grille._cellules[self._coor[0], self._coor[1]+1].detruire()
-            self._grille._cellules[self._coor[0]+1, self._coor[1]].detruire()
-            self._grille._cellules[self._coor[0]+2, self._coor[1]].detruire()
-            self._grille._cellules[self._coor[0], self._coor[1]].remplacer(Bombe())
-
-        if self._type == 5:
-            self._grille._cellules[self._coor[0], self._coor[1]] = Bombe()
-            self._grille._cellules[self._coor[0]-1, self._coor[1]].detruire()
-            self._grille._cellules[self._coor[0]+1, self._coor[1]].detruire()
-            self._grille._cellules[self._coor[0], self._coor[1]+1].detruire()
-            self._grille._cellules[self._coor[0], self._coor[1]+2].detruire()
-        
-        if self._type == 6:
-            self._grille._cellules[self._coor[0]-1, self._coor[1]].detruire()
-            self._grille._cellules[self._coor[0]-2, self._coor[1]].detruire()
-            self._grille._cellules[self._coor[0], self._coor[1]-1].detruire()
-            self._grille._cellules[self._coor[0], self._coor[1]-2].detruire()
-            self._grille._cellules[self._coor[0], self._coor[1]].remplacer(Bombe())
-        
-        if self._type == 7:
-            self._grille._cellules[self._coor[0]-1, self._coor[1]].detruire()
-            self._grille._cellules[self._coor[0]+1, self._coor[1]].detruire()
-            self._grille._cellules[self._coor[0], self._coor[1]-1].detruire()
-            self._grille._cellules[self._coor[0], self._coor[1]-2].detruire()
-            self._grille._cellules[self._coor[0], self._coor[1]].remplacer(Bombe())
-        
-        if self._type == 8:
-            self._grille._cellules[self._coor[0], self._coor[1]-2].detruire()
-            self._grille._cellules[self._coor[0], self._coor[1]-1].detruire()
-            self._grille._cellules[self._coor[0], self._coor[1]+1].detruire()
-            self._grille._cellules[self._coor[0], self._coor[1]+2].detruire()
-            self._grille._cellules[self._coor[0], self._coor[1]].remplacer(Deflagrateur())
-
-        if self._type == 9:
-            self._grille._cellules[self._coor[0]-2, self._coor[1]].detruire()
-            self._grille._cellules[self._coor[0]-1, self._coor[1]].detruire()
-            self._grille._cellules[self._coor[0]+1, self._coor[1]].detruire()
-            self._grille._cellules[self._coor[0]+2, self._coor[1]].detruire()
-            self._grille._cellules[self._coor[0], self._coor[1]].remplacer(Deflagrateur())
-        
-        if self._type == 10:
-            self._grille._cellules[self._coor[0], self._coor[1]-1].detruire()
-            self._grille._cellules[self._coor[0], self._coor[1]+1].detruire()
-            self._grille._cellules[self._coor[0], self._coor[1]].detruire()
-        
-        if self._type == 11:
-            self._grille._cellules[self._coor[0]-1, self._coor[1]].detruire()
-            self._grille._cellules[self._coor[0]+1, self._coor[1]].detruire()
-            self._grille._cellules[self._coor[0], self._coor[1]].detruire()
+        else:
+            pass # Ne rien faire si le pattern est composé de bonus ou d'étoiles
+            
+lien1 = "C:/Users/bouti/Downloads/Niveau1 - Reconnaissance de bonus.xml"
+lien1_1 = "C:/Users/bouti/Downloads/Niveau1.1 - Activation des bonus.xml"
+lien2 = "C:/Users/bouti/Downloads/Niveau2 - Introduction des cellules gelees.xml"
+lien3 = "C:/Users/bouti/Downloads/Niveau3 - Introduction des cellules vides.xml"
+lien4 = "C:/Users/bouti/Downloads/Niveau4 V1.3 - Carte non convexe + introduction des étoiles.xml"
+lien5 = "C:/Users/bouti/Downloads/NIveau5 V1.2 - Flux complexe.xml"
+lien6 = "C:/Users/bouti/Downloads/NIveau6 V1.2 - Flux complexe et téléportation.xml"
