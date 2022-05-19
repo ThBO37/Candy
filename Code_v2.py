@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
 Created on Tue May 17 22:31:17 2022
-
 @author: bouti
 """
 
 import numpy as np
+import random as rd
 import xml.etree.ElementTree as ET
 
 class Grille:
@@ -14,7 +14,7 @@ class Grille:
         tronc = arbreXML.getroot()
 
         nom = tronc.attrib['titre']
-        couleurs = tronc.attrib['couleurs']
+        self._couleurs = tronc.attrib['couleurs']
         self._nb_colonnes = int(tronc.attrib['nb_colonnes'])
         self._nb_lignes = int(tronc.attrib['nb_lignes'])
 
@@ -47,26 +47,26 @@ class Grille:
             else:
                 
                 cont = i.attrib['contenu']
-                if cont in couleurs:
-                    elem = EltClassique(cont)
+                if cont in self._couleurs:
+                    elem = EltClassique(cont, self, (ligne, colonne))
 
                 elif cont in ['etoile','Etoile']:
-                    elem = Etoile()
+                    elem = Etoile(self, (ligne, colonne))
                     
                 elif cont in ['avion', 'Avion']:
-                    elem = Avion()
+                    elem = Avion(self, (ligne,colonne))
 
                 elif cont in ['bombe', 'Bombe']:
-                    elem = Bombe()
+                    elem = Bombe(self, (ligne, colonne))
 
                 elif cont in ['deflagrateur','Deflagrateur']:
-                    elem = Deflagrateur()
+                    elem = Deflagrateur(self, (ligne, colonne))
 
                 elif 'Roquette' in cont:
-                    if 'horizontale' in cont:
-                        elem = Roquette('h')
+                    if 'Horizontale' in cont:
+                        elem = Roquette('h', self, (ligne, colonne))
                     else:
-                        elem = Roquette('v')
+                        elem = Roquette('v', self, (ligne, colonne))
                     
                 else:
                     raise ValueError(("L'élément à la ligne {} et à la colonne {} n'existe pas.").format(ligne, colonne))
@@ -129,7 +129,7 @@ class Grille:
                         cell.append((i-1,j))
                         cell.append((i,j))
                         cell.append((i+1,j))
-                        cell.append((i+2,j))
+                        cell.append((i+2,j)) 
         
         # TYPE 4 - T - F
         for i in range(0,n-2):
@@ -322,6 +322,14 @@ class Cellule:
         self._ortn = ortn
         self._flux = flux
 
+    def remplissage_cellule(self):
+        if isinstance(self, CellNormale) or isinstance(self, CellGelee):
+            if self._flux == 'Source':
+                L = self._grille._couleurs
+                coul = rd.choice(L)
+                elem = EltClassique(coul, self._grille, self._coor)
+                
+
 class CellVide(Cellule):
     def __init__(self, grille, coor, ortn, flux):
         super().__init__(grille, coor, ortn, flux)
@@ -334,7 +342,7 @@ class CellNormale(Cellule):
         super().__init__(grille, coor, ortn, flux)
         self._element = element
 
-    def __str__(self):
+    def __str__(self): 
         return repr(self._element)
 
     def detruire(self):
@@ -359,12 +367,13 @@ class CellGelee(Cellule):
         self._element = nouvel_element
 
 class Element:
-    def __init__(self):
-        pass
+    def __init__(self, grille, coor):
+        self._grille = grille
+        self._coor = coor
 
 class EltClassique(Element):
-    def __init__(self, couleur):
-        super().__init__()
+    def __init__(self, couleur, grille, coor):
+        super().__init__(grille, coor)
         self._couleur = couleur
 
     def __repr__(self):
@@ -382,44 +391,108 @@ class EltClassique(Element):
             return " "
 
 class Bonus(Element):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, grille, coor):
+        super().__init__(grille, coor)
 
 class Etoile(Element):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, grille, coor):
+        super().__init__(grille, coor)
 
     def __repr__(self):
         return "⭐"
 
 class Avion(Bonus):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, grille, coor):
+        super().__init__(grille, coor)
 
     def __repr__(self):
         return "✈"
 
-class Bombe(Bonus):
-    def __init__(self):
-        super().__init__()
+    def activer(self, coor_obj):
+        self._grille._cellules[coor_obj[0], coor_obj[1]].detruire()
+        self._grille._cellules[self._coor[0], self._coor[1]].detruire()
+        if self._coor[0]>=1:
+            self._grille._cellules[self._coor[0]-1, self._coor[1]].detruire()
+        if self._coor[0]<=self._grille._nb_lignes-1:
+            self._grille._cellules[self._coor[0]+1, self._coor[1]].detruire()
+        if self._coor[1]>=1:
+            self._grille._cellules[self._coor[0], self._coor[1]-1].detruire()
+        if self._coor[1]<=self._grille._nb_colonnes-1:
+            self._grille._cellules[self._coor[0], self._coor[1]+1].detruire()
+        
+ class Bombe(Bonus):
+    def __init__(self, grille, coor):
+        super().__init__(grille, coor)
 
     def __repr__(self):
         return "💣"
 
+    def activer(self):
+        for i in range(-1,2):
+            for j in range(-1,2):
+                try:
+                    print('Ca marche')
+                    self._grille._cellules[self._coor[0]+i, self._coor[1]+j].detruire()
+                except:
+                    pass
+        try:
+            self._grille._cellules[self._coor[0]-2, self._coor[1]].detruire()
+        except:
+            pass
+        try:
+            self._grille._cellules[self._coor[0]+2, self._coor[1]].detruire()
+        except:
+            pass
+        try:
+            self._grille._cellules[self._coor[0], self._coor[1]-2].detruire()
+        except:
+            pass
+        try:
+            self._grille._cellules[self._coor[0], self._coor[1]+2].detruire()
+        except:
+            pass
+
 class Deflagrateur(Bonus):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, grille, coor):
+        super().__init__(grille, coor)
 
     def __repr__(self):
         return "🔫"
 
+    def activer(self, elt_type):
+        for i in range(self._grille._nb_lignes):
+            for j in range(self._grille._nb_colonnes):
+                try:
+                    if self._grille._cellules[i,j]._element._couleur == elt_type:
+                        print('Ca marche ?')
+                        self._grille._cellules[i,j].detruire()
+                except:
+                    print('Ca marche pas')
+
 class Roquette(Bonus):
-    def __init__(self, direction):
-        super().__init__()
+    def __init__(self, direction, grille, coor):
+        super().__init__(grille, coor)
         self._direction = direction
 
     def __repr__(self):
         return "🚀"
+
+    def activer(self):
+        if self._direction == 'h':
+            ligne = self._coor[0]
+            nb_colonnes = self._grille._nb_colonnes
+
+            for i in range(nb_colonnes):
+                print('Ca marche')
+                self._grille._cellules[ligne, i].detruire()
+                
+        elif self._direction == 'v':
+            colonne = self._coor[1]
+            nb_lignes = self._grille._nb_lignes
+
+            for i in range(nb_lignes):
+                print('Ca marche')
+                self._grille._cellules[i, colonne].detruire()
 
 class Pattern:
     # TYPES DE PATTERNS: (triés par force)
@@ -445,20 +518,18 @@ class Pattern:
         return "Pattern de type {} ({}) en {}".format(str(self._type), str(self._el), str(self._coor))
 
     def activer(self):
-        print(type(self._grille._cellules[self._coor[0], self._coor[1]]._element))
         if isinstance(self._grille._cellules[self._coor[0], self._coor[1]]._element, EltClassique):
-            print("Ca marche")
             if self._type == 1:
                 self._grille._cellules[self._coor[0], self._coor[1]-1].detruire()
                 self._grille._cellules[self._coor[0], self._coor[1]+1].detruire()
                 self._grille._cellules[self._coor[0], self._coor[1]+2].detruire()
-                self._grille._cellules[self._coor[0], self._coor[1]].remplacer(Roquette())
+                self._grille._cellules[self._coor[0], self._coor[1]].remplacer(Roquette('verticale'))
                 
             if self._type == 2:
                 self._grille._cellules[self._coor[0]-1, self._coor[1]].detruire()
                 self._grille._cellules[self._coor[0]+1, self._coor[1]].detruire()
                 self._grille._cellules[self._coor[0]+2, self._coor[1]].detruire()
-                self._grille._cellules[self._coor[0], self._coor[1]].remplacer(Roquette())
+                self._grille._cellules[self._coor[0], self._coor[1]].remplacer(Roquette('horizontale'))
             
             if self._type == 3:
                 self._grille._cellules[self._coor[0]+1, self._coor[1]].detruire()
@@ -521,10 +592,10 @@ class Pattern:
         else:
             pass # Ne rien faire si le pattern est composé de bonus ou d'étoiles
             
-lien1 = "C:/Users/bouti/Downloads/Niveau1 - Reconnaissance de bonus.xml"
-lien1_1 = "C:/Users/bouti/Downloads/Niveau1.1 - Activation des bonus.xml"
-lien2 = "C:/Users/bouti/Downloads/Niveau2 - Introduction des cellules gelees.xml"
-lien3 = "C:/Users/bouti/Downloads/Niveau3 - Introduction des cellules vides.xml"
-lien4 = "C:/Users/bouti/Downloads/Niveau4 V1.3 - Carte non convexe + introduction des étoiles.xml"
-lien5 = "C:/Users/bouti/Downloads/NIveau5 V1.2 - Flux complexe.xml"
-lien6 = "C:/Users/bouti/Downloads/NIveau6 V1.2 - Flux complexe et téléportation.xml"
+lien1 = "C:/Users/Elève/Downloads/Niveau1 - Reconnaissance de bonus.xml"
+lien1_1 = "C:/Users/Elève/Downloads/Niveau1.1 - Activation des bonus.xml"
+lien2 = "C:/Users/Elève/Downloads/Niveau2 - Introduction des cellules gelees.xml"
+lien3 = "C:/Users/Elève/Downloads/Niveau3 - Introduction des cellules vides.xml"
+lien4 = "C:/Users/Elève/Downloads/Niveau4 V1.3 - Carte non convexe + introduction des étoiles.xml"
+lien5 = "C:/Users/Elève/Downloads/NIveau5 V1.2 - Flux complexe.xml"
+lien6 = "C:/Users/Elève/Downloads/NIveau6 V1.2 - Flux complexe et téléportation.xml"
